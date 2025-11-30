@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    tools {
+        nodejs "nodejs"  // Usa o nome que você configurou "nodejs"
+    }
+    
     parameters {
         choice(
             name: 'BRANCH',
@@ -22,36 +26,10 @@ pipeline {
             }
         }
         
-        stage('Setup Node.js') {
+        stage('Verificar Node.js') {
             steps {
-                script {
-                    if (isUnix()) {
-                        // Linux/Mac
-                        sh '''
-                            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-                            export NVM_DIR="$HOME/.nvm"
-                            [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
-                            nvm install 18
-                            nvm install 20
-                            nvm use 18
-                        '''
-                    } else {
-                        // Windows - Verifica se Node.js já está instalado
-                        bat '''
-                            node --version > nul 2>&1
-                            IF %ERRORLEVEL% NEQ 0 (
-                                echo "Node.js não encontrado. Instalando..."
-                                # Você pode instalar manualmente ou usar outras opções
-                                echo "Por favor, instale o Node.js manualmente no Jenkins"
-                                exit 1
-                            ) ELSE (
-                                echo "Node.js já está instalado"
-                                node --version
-                                npm --version
-                            )
-                        '''
-                    }
-                }
+                bat 'node --version'
+                bat 'npm --version'
             }
         }
         
@@ -73,7 +51,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'backend/test-results.xml'
+                            // Configure seu Jest para gerar JUnit XML se necessário
                             archiveArtifacts 'backend/test-results.json'
                         }
                     }
@@ -142,14 +120,17 @@ pipeline {
             steps {
                 script {
                     bat '''
+                        echo "📦 Criando pacote do backend..."
                         mkdir package-backend
                         xcopy backend package-backend\\backend /E /I /EXCLUDE:exclude.txt
                         cd package-backend\\backend
                         npm install --production
                         cd ..\\..
+                        
+                        echo "📦 Compactando pacote..."
                         set TIMESTAMP=%date:~-4,4%%date:~-10,2%%date:~-7,2%%time:~0,2%%time:~3,2%%time:~6,2%
                         set TIMESTAMP=%TIMESTAMP: =0%
-                        zip -r backend-package-%TIMESTAMP%.zip package-backend
+                        powershell Compress-Archive -Path package-backend -DestinationPath backend-package-%TIMESTAMP%.zip
                     '''
                 }
             }
