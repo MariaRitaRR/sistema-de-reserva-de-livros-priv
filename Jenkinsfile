@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     tools {
-        nodejs "nodejs"  // Usa o nome que você configurou "nodejs"
+        nodejs "nodejs"
     }
     
     parameters {
@@ -20,6 +20,10 @@ pipeline {
     }
     
     stages {
+
+        /* ================================
+         * CHECKOUT
+         * ================================ */
         stage('Checkout') {
             steps {
                 git branch: params.BRANCH, url: 'https://github.com/MariaRitaRR/sistema-de-reserva-de-livros-priv.git'
@@ -32,7 +36,11 @@ pipeline {
                 bat 'npm --version'
             }
         }
-        
+
+        /* ================================
+         * BACKEND
+         * ================================ */
+
         stage('Setup Backend') {
             steps {
                 dir('backend') {
@@ -40,50 +48,65 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Testes Backend') {
             parallel {
-                stage('Testes Básicos') {
-                    steps {
-                        dir('backend') {
-                            bat 'npm test -- --runInBand'
+
+                basic: {
+                    stage('Testes Básicos') {
+                        steps {
+                            dir('backend') {
+                                bat 'npm test -- --runInBand'
+                            }
                         }
-                    }
-                    post {
-                        always {
-                            // Configure seu Jest para gerar JUnit XML se necessário
-                            archiveArtifacts 'backend/test-results.json'
+                        post {
+                            always {
+                                script {
+                                    if (fileExists('backend/test-results.json')) {
+                                        archiveArtifacts 'backend/test-results.json'
+                                    } else {
+                                        echo "ℹ️ test-results.json não encontrado."
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                
-                stage('Testes com Cobertura') {
-                    steps {
-                        dir('backend') {
-                            bat 'npm run test:ci'
-                            bat 'npm run test:coverage'
+
+                coverage: {
+                    stage('Cobertura de Testes') {
+                        steps {
+                            dir('backend') {
+                                bat 'npm run test:ci'
+                                bat 'npm run test:coverage'
+                            }
                         }
-                    }
-                    post {
-                        always {
-                            publishHTML([
-                                allowMissing: true,
-                                alwaysLinkToLastBuild: true,
-                                keepAll: true,
-                                reportDir: 'backend/coverage/lcov-report',
-                                reportFiles: 'index.html',
-                                reportName: 'Relatório Cobertura'
-                            ])
+                        post {
+                            always {
+                                archiveArtifacts 'backend/coverage/lcov.info'
+                                archiveArtifacts 'backend/coverage/coverage-final.json'
+
+                                script {
+                                    if (fileExists('backend/coverage/lcov-report/index.html')) {
+                                        echo "📊 Relatório HTML encontrado!"
+                                        bat 'powershell Compress-Archive -Path backend/coverage/lcov-report -DestinationPath coverage-report.zip'
+                                        archiveArtifacts 'coverage-report.zip'
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        
+
+        /* ================================
+         * AUDIT DE SEGURANÇA
+         * ================================ */
         stage('Audit Segurança') {
             steps {
                 dir('backend') {
-                    bat 'npm audit --audit-level=high || echo "⚠️  Issues encontrados no audit"'
+                    bat 'npm audit --audit-level=high || echo "⚠️ Issues encontradas"'
                     bat 'npm audit --json > audit-report.json || echo "{}" > audit-report.json'
                 }
             }
@@ -93,7 +116,10 @@ pipeline {
                 }
             }
         }
-        
+
+        /* ================================
+         * FRONTEND
+         * ================================ */
         stage('Testes Frontend') {
             steps {
                 dir('frontend') {
@@ -103,34 +129,42 @@ pipeline {
             }
             post {
                 always {
-                    echo "🎨 Frontend - Build concluído com sucesso"
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'frontend/dist',
-                        reportFiles: 'index.html',
-                        reportName: 'Frontend Build'
-                    ])
+                    echo "🎨 Frontend - Build concluído!"
+                    archiveArtifacts 'frontend/dist/**/*'
                 }
             }
         }
-        
+
+        /* ================================
+         * PACKAGE
+         * ================================ */
         stage('Package') {
             steps {
                 script {
                     bat '''
                         echo "📦 Criando pacote do backend..."
+                        if exist package-backend rmdir /s /q package-backend
                         mkdir package-backend
-                        xcopy backend package-backend\\backend /E /I /EXCLUDE:exclude.txt
+
+                        echo "📂 Copiando arquivos do backend..."
+                        if exist exclude.txt (
+                            xcopy backend package-backend\\backend /E /I /EXCLUDE:exclude.txt
+                        ) else (
+                            xcopy backend package-backend\\backend /E /I
+                        )
+
+                        echo "🚀 Instalando dependências de produção..."
                         cd package-backend\\backend
                         npm install --production
                         cd ..\\..
-                        
+
                         echo "📦 Compactando pacote..."
                         set TIMESTAMP=%date:~-4,4%%date:~-10,2%%date:~-7,2%%time:~0,2%%time:~3,2%%time:~6,2%
                         set TIMESTAMP=%TIMESTAMP: =0%
+
                         powershell Compress-Archive -Path package-backend -DestinationPath backend-package-%TIMESTAMP%.zip
+
+                        echo "✅ Pacote criado: backend-package-%TIMESTAMP%.zip"
                     '''
                 }
             }
@@ -140,58 +174,64 @@ pipeline {
                 }
             }
         }
-        
+
+        /* ================================
+         * RELATÓRIO FINAL
+         * ================================ */
         stage('Relatório Final') {
             steps {
                 script {
+
+                    def coverage = "N/A"
+                    if (fileExists('backend/coverage/coverage-summary.json')) {
+                        try {
+                            def sum = readJSON file: 'backend/coverage/coverage-summary.json'
+                            coverage = "${sum.total.lines.pct}%"
+                        } catch (e) {
+                            coverage = "Relatório disponível"
+                        }
+                    }
+
                     def summary = """
 # 🎉 Relatório de Integração - Sistema de Reservas Bookle
 
 **Data:** ${new Date().format('dd/MM/yyyy HH:mm:ss')}
-**Branch:** ${env.BRANCH_NAME}
+**Branch:** ${params.BRANCH}
 **Build:** ${env.BUILD_NUMBER}
+**Cobertura de Testes:** ${coverage}
 
-## 📋 Status dos Estágios:
-- ✅ Checkout e Setup
-- ✅ Testes Backend
-- ✅ Audit de Segurança
-- ✅ Testes Frontend
-- ✅ Package
+## Status:
+- Backend: OK  
+- Frontend: OK  
+- Cobertura: ${coverage}  
+- Package: OK  
 
-## 📊 Funcionalidades Validadas:
-- ✅ Autenticação JWT e autorização
-- ✅ CRUD completo de reservas  
-- ✅ Persistência e integridade de dados
-- ✅ Validações de negócio
-- ✅ Frontend integrado
-
-**Status Final:** ${currentBuild.currentResult}
+Status Final: ${currentBuild.currentResult}
 """
 
                     writeFile file: 'relatorio-integracao.md', text: summary
                     archiveArtifacts 'relatorio-integracao.md'
-                    
-                    echo summary
                 }
             }
         }
-    }
-    
+
+    } // fim stages
+
+    /* ================================
+     * POST BUILD
+     * ================================ */
     post {
         always {
-            echo "📊 Pipeline finalizado - Status: ${currentBuild.currentResult}"
+            echo "📊 Pipeline finalizada — Status: ${currentBuild.currentResult}"
         }
-        
         success {
-            echo "✅ Pipeline concluído com sucesso!"
+            echo "🎉 Pipeline concluída com SUCESSO!"
         }
-        
         failure {
             echo "❌ Pipeline falhou!"
         }
-        
         unstable {
-            echo "⚠️  Pipeline instável - alguns testes falharam"
+            echo "⚠️ Pipeline instável!"
         }
     }
 }
