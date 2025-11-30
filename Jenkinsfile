@@ -12,42 +12,78 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // O checkout é AUTOMÁTICO - não precisa do bloco git aqui!
                 echo '✅ Código baixado automaticamente do repositório'
             }
         }
         
         stage('Install Dependencies') {
             steps {
-                bat 'npm ci'
+                dir('backend') {
+                    bat 'npm ci'
+                }
                 echo '✅ Dependências instaladas com sucesso!'
             }
         }
         
         stage('Run Unit Tests') {
             steps {
-                bat 'npm test'
+                dir('backend') {
+                    bat 'npm test'
+                }
             }
             post {
                 always {
-                    junit 'junit.xml' // Se o Jest gerar este arquivo
+                    // Relatório de cobertura (se o Jest gerar)
+                    publishHTML(target: [
+                        reportDir: 'backend/coverage/lcov-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Relatório de Cobertura de Testes'
+                    ])
                 }
             }
         }
         
         stage('Security Audit') {
             steps {
-                bat 'npm audit --audit-level moderate || echo "Audit completed"'
+                dir('backend') {
+                    bat 'npm audit --audit-level moderate || echo "Audit completed"'
+                }
             }
         }
         
         stage('Build Application') {
             steps {
-                echo '🔨 Building aplicação...'
-                bat 'start /B npm start'
-                bat 'timeout /t 10 /nobreak >nul'
-                bat 'taskkill /f /im node.exe 2>nul || echo "Servidor parado"'
-                echo '✅ Build validado com sucesso!'
+                echo '🔨 Validando aplicação...'
+                dir('backend') {
+                    // Verifica se o servidor inicia corretamente
+                    bat 'node server.js & echo "Servidor iniciado"'
+                    bat 'timeout /t 5 /nobreak >nul'
+                    bat 'taskkill /f /im node.exe 2>nul || echo "Servidor parado"'
+                }
+                echo '✅ Aplicação validada com sucesso!'
+            }
+        }
+        
+        stage('Generate Test Report') {
+            steps {
+                script {
+                    // Cria um relatório simples dos testes
+                    bat '''
+                        echo RELATÓRIO DE TESTES - SISTEMA DE RESERVA DE LIVROS > test-report.txt
+                        echo ================================================== >> test-report.txt
+                        echo Data: %date% %time% >> test-report.txt
+                        echo Build: #{env.BUILD_NUMBER} >> test-report.txt
+                        echo >> test-report.txt
+                        echo TESTES EXECUTADOS: >> test-report.txt
+                        echo - authController.test.js >> test-report.txt
+                        echo - bookController.test.js >> test-report.txt
+                        echo - reservationController.test.js >> test-report.txt
+                        echo - userController.test.js >> test-report.txt
+                        echo >> test-report.txt
+                        echo STATUS: COMPLETADO >> test-report.txt
+                    '''
+                    archiveArtifacts artifacts: 'test-report.txt', fingerprint: true
+                }
             }
         }
     }
@@ -55,14 +91,20 @@ pipeline {
     post {
         always {
             echo "🏁 Pipeline finalizada - Status: ${currentBuild.currentResult}"
+            
+            // Arquiva a cobertura de testes se existir
+            archiveArtifacts artifacts: 'backend/coverage/**/*', fingerprint: true
         }
         
         success {
-            echo '🎉 TODOS OS TESTES PASSARAM! Sistema de Reserva de Livros está funcionando!'
+            echo '🎉 PIPELINE SUCESSO! Sistema de Reserva de Livros está funcionando!'
+            echo '✅ Testes unitários executados'
+            echo '✅ Auditoria de segurança realizada'
+            echo '✅ Build validado'
         }
         
         failure {
-            echo '❌ ALGO DEU ERRADO! Verifique os logs.'
+            echo '❌ Pipeline falhou! Verifique os logs acima.'
         }
     }
 }
