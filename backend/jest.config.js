@@ -10,5 +10,12 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   verbose: true,
-  testTimeout: 10000
+  testTimeout: 10000,
+  reporters: [
+    'default', // mostra no terminal
+    ['jest-json-reporter', {
+      outputPath: 'backend/test-results.json', // caminho que o Jenkins vai ler
+      includeConsoleOutput: true
+    }]
+  ]
 };
