@@ -12,10 +12,7 @@ module.exports = {
   verbose: true,
   testTimeout: 10000,
   reporters: [
-    'default', // mostra no terminal
-    ['jest-json-reporter', {
-      outputPath: 'backend/test-results.json', // caminho que o Jenkins vai ler
-      includeConsoleOutput: true
-    }]
+    'default',
+    ['jest-junit', { outputDirectory: './reports', outputName: 'junit.xml' }]
   ]
 };

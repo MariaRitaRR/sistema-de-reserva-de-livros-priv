@@ -41,7 +41,7 @@ pipeline {
             post {
                 always {
                     echo '📄 Publicando resultados dos testes...'
-                    junit testResults: 'backend/test-results.json', allowEmptyResults: true
+                    junit testResults: 'backend/reports/junit.xml', allowEmptyResults: true
                 }
             }
         }
