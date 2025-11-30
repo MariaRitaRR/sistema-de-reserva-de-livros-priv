@@ -15,19 +15,29 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
     }
     
-    environment {
-        NODE_VERSION = '18'
-        // Configurar estas variáveis no Jenkins
-        MAIL_USERNAME = credentials('mail-username')
-        MAIL_PASSWORD = credentials('mail-password')
-        NOTIFY_EMAIL = credentials('notify-email')
-        CODECOV_TOKEN = credentials('codecov-token')
-    }
-    
     stages {
         stage('Checkout') {
             steps {
-                git branch: params.BRANCH, url: 'https://github.com/seu-usuario/seu-repositorio.git'
+                git branch: params.BRANCH, url: 'https://github.com/MariaRitaRR/sistema-de-reserva-de-livros-priv.git'
+            }
+        }
+        
+        stage('Setup Node.js') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                            export NVM_DIR="$HOME/.nvm"
+                            [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                            nvm install 18
+                            nvm install 20
+                            nvm use 18
+                        '''
+                    } else {
+                        bat 'choco install nodejs --version=18.17.0'
+                    }
+                }
             }
         }
         
@@ -35,7 +45,6 @@ pipeline {
             steps {
                 dir('backend') {
                     script {
-                        // Simulação de cache - Jenkins tem sistema próprio de cache
                         if (fileExists('node_modules')) {
                             echo "✅ Cache encontrado - reutilizando node_modules"
                         } else {
@@ -50,38 +59,46 @@ pipeline {
         stage('Testes Backend') {
             parallel {
                 stage('Testes Node 18') {
-                    agent {
-                        docker {
-                            image 'node:18-alpine'
-                            reuseNode true
-                        }
-                    }
                     steps {
-                        dir('backend') {
-                            sh 'npm ci'
-                            sh 'npm test -- --runInBand'
+                        script {
+                            if (isUnix()) {
+                                sh '''
+                                    export NVM_DIR="$HOME/.nvm"
+                                    [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                                    nvm use 18
+                                '''
+                            }
+                            
+                            dir('backend') {
+                                sh 'npm ci'
+                                sh 'npm test -- --runInBand'
+                            }
                         }
                     }
                     post {
                         always {
-                            junit 'backend/test-results.xml' // Configure seu Jest para gerar JUnit
+                            junit 'backend/test-results.xml'
                             archiveArtifacts 'backend/test-results.json'
                         }
                     }
                 }
                 
                 stage('Testes Node 20') {
-                    agent {
-                        docker {
-                            image 'node:20-alpine'
-                            reuseNode true
-                        }
-                    }
                     steps {
-                        dir('backend') {
-                            sh 'npm ci'
-                            sh 'npm run test:ci'
-                            sh 'npm run test:coverage'
+                        script {
+                            if (isUnix()) {
+                                sh '''
+                                    export NVM_DIR="$HOME/.nvm"
+                                    [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                                    nvm use 20
+                                '''
+                            }
+                            
+                            dir('backend') {
+                                sh 'npm ci'
+                                sh 'npm run test:ci'
+                                sh 'npm run test:coverage'
+                            }
                         }
                     }
                     post {
@@ -95,12 +112,6 @@ pipeline {
                                 reportFiles: 'index.html',
                                 reportName: 'Relatório Cobertura'
                             ])
-                        }
-                        success {
-                            // Upload para Codecov - precisa do plugin
-                            sh '''
-                                curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN} -f backend/coverage/lcov.info -F backend
-                            '''
                         }
                     }
                 }
@@ -131,6 +142,14 @@ pipeline {
             post {
                 always {
                     echo "🎨 Frontend - Build concluído com sucesso"
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'frontend/dist',
+                        reportFiles: 'index.html',
+                        reportName: 'Frontend Build'
+                    ])
                 }
             }
         }
@@ -140,7 +159,7 @@ pipeline {
                 script {
                     sh '''
                         mkdir -p package-backend
-                        rsync -av --exclude='.git' --exclude='node_modules' backend/ package-backend/backend/
+                        rsync -av --exclude=".git" --exclude="node_modules" backend/ package-backend/backend/
                         cd package-backend/backend
                         npm install --production
                         cd ../..
@@ -155,80 +174,54 @@ pipeline {
                 }
             }
         }
+        
+        stage('Relatório Final') {
+            steps {
+                script {
+                    def summary = """
+# 🎉 Relatório de Integração - Sistema de Reservas Bookle
+
+**Data:** ${new Date().format('dd/MM/yyyy HH:mm:ss')}
+**Branch:** ${env.BRANCH_NAME}
+**Build:** ${env.BUILD_NUMBER}
+
+## 📋 Status dos Estágios:
+- ✅ Checkout e Setup
+- ✅ Testes Backend (Node 18 e 20)
+- ✅ Audit de Segurança
+- ✅ Testes Frontend
+- ✅ Package
+
+## 📊 Funcionalidades Validadas:
+- ✅ Autenticação JWT e autorização
+- ✅ CRUD completo de reservas  
+- ✅ Persistência e integridade de dados
+- ✅ Validações de negócio
+- ✅ Frontend integrado
+
+**Status Final:** ${currentBuild.currentResult}
+"""
+
+                    writeFile file: 'relatorio-integracao.md', text: summary
+                    archiveArtifacts 'relatorio-integracao.md'
+                    
+                    echo summary
+                }
+            }
+        }
     }
     
     post {
         always {
-            script {
-                // Relatório consolidado similar ao GitHub Actions
-                def summary = """
-                # 🎉 Relatório de Integração - Sistema de Reservas Bookle
-
-                **Data:** ${new Date().format('dd/MM/yyyy HH:mm:ss')}
-                **Branch:** ${env.BRANCH_NAME}
-                **Build:** ${env.BUILD_NUMBER}
-
-                ## 📋 Status dos Estágios:
-                ${currentBuild.rawBuild.getStages().collect { stage ->
-                    "• ${stage.name}: ${stage.status}"
-                }.join('\\n')}
-
-                ## 📊 Funcionalidades Validadas:
-                - ✅ Autenticação JWT e autorização
-                - ✅ CRUD completo de reservas  
-                - ✅ Persistência e integridade de dados
-                - ✅ Validações de negócio
-                - ✅ Frontend integrado
-
-                **Status Final:** ${currentBuild.currentResult}
-                """
-
-                // Escrever relatório em arquivo
-                writeFile file: 'relatorio-integracao.md', text: summary
-                archiveArtifacts 'relatorio-integracao.md'
-            }
+            echo "📊 Pipeline finalizado - Status: ${currentBuild.currentResult}"
         }
         
         success {
-            script {
-                echo "✅ Pipeline concluído com sucesso!"
-                // Enviar email de sucesso
-                emailext (
-                    subject: "✅ Pipeline SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: """
-                    O pipeline foi concluído com SUCESSO!
-                    
-                    Repositório: ${env.JOB_NAME}
-                    Build: #${env.BUILD_NUMBER}
-                    Branch: ${env.BRANCH_NAME}
-                    Status: ${currentBuild.currentResult}
-                    
-                    Acesse: ${env.BUILD_URL}
-                    """,
-                    to: "${env.NOTIFY_EMAIL}"
-                )
-            }
+            echo "✅ Pipeline concluído com sucesso!"
         }
         
         failure {
-            script {
-                echo "❌ Pipeline falhou!"
-                // Enviar email de falha
-                emailext (
-                    subject: "❌ Pipeline FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: """
-                    O pipeline FALHOU!
-                    
-                    Repositório: ${env.JOB_NAME}
-                    Build: #${env.BUILD_NUMBER}
-                    Branch: ${env.BRANCH_NAME}
-                    Status: ${currentBuild.currentResult}
-                    
-                    Acesse para detalhes: ${env.BUILD_URL}
-                    """,
-                    to: "${env.NOTIFY_EMAIL}"
-                )
-            }
+            echo "❌ Pipeline falhou!"
         }
         
         unstable {
