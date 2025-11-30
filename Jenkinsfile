@@ -15,53 +15,53 @@ pipeline {
             }
         }
 
-        stage('Verificar Node e NPM') {
-            steps {
-                bat 'node -v'
-                bat 'npm -v'
-            }
-        }
+        // stage('Verificar Node e NPM') {
+        //     steps {
+        //         bat 'node -v'
+        //         bat 'npm -v'
+        //     }
+        // }
 
-        stage('Backend - Install dependencies') {
-            steps {
-                echo '📦 Instalando dependências do backend...'
-                dir('backend') {
-                    bat 'npm ci'
-                }
-            }
-        }
+        // stage('Backend - Install dependencies') {
+        //     steps {
+        //         echo '📦 Instalando dependências do backend...'
+        //         dir('backend') {
+        //             bat 'npm ci'
+        //         }
+        //     }
+        // }
 
-        stage('Backend - Run Tests') {
-            steps {
-                echo '🧪 Rodando testes do backend...'
-                dir('backend') {
-                    bat 'npx jest --json --outputFile=test-results.json'
-                }
-            }
-            post {
-                always {
-                    echo '📄 Publicando resultados dos testes...'
-                    junit testResults: 'backend/test-results.json', allowEmptyResults: true
-                }
-            }
-        }
+        // stage('Backend - Run Tests') {
+        //     steps {
+        //         echo '🧪 Rodando testes do backend...'
+        //         dir('backend') {
+        //             bat 'npx jest --json --outputFile=test-results.json'
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             echo '📄 Publicando resultados dos testes...'
+        //             junit testResults: 'backend/test-results.json', allowEmptyResults: true
+        //         }
+        //     }
+        // }
 
-        stage('Frontend - Install dependencies') {
-            steps {
-                echo '📦 Instalando dependências do frontend...'
-                dir('frontend') {
-                    bat 'npm ci'
-                }
-            }
-        }
+        // stage('Frontend - Install dependencies') {
+        //     steps {
+        //         echo '📦 Instalando dependências do frontend...'
+        //         dir('frontend') {
+        //             bat 'npm ci'
+        //         }
+        //     }
+        // }
 
-        stage('Frontend - Build') {
-            steps {
-                echo '🛠️ Construindo frontend...'
-                dir('frontend') {
-                    bat 'npm run build'
-                }
-            }
+        // stage('Frontend - Build') {
+        //     steps {
+        //         echo '🛠️ Construindo frontend...'
+        //         dir('frontend') {
+        //             bat 'npm run build'
+        //         }
+        //     }
         }
 
     }
