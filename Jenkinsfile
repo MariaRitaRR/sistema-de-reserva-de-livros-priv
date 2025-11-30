@@ -19,7 +19,7 @@ pipeline {
             steps {
                 echo '📦 Instalando dependências do backend...'
                 dir('backend') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 echo '🧪 Rodando testes do backend...'
                 dir('backend') {
-                    sh 'npx jest --json --outputFile=test-results.json'
+                    bat 'npx jest --json --outputFile=test-results.json'
                 }
             }
 
@@ -44,7 +44,7 @@ pipeline {
             steps {
                 echo '📦 Instalando dependências do frontend...'
                 dir('frontend') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -53,7 +53,7 @@ pipeline {
             steps {
                 echo '🛠️ Construindo frontend...'
                 dir('frontend') {
-                    sh 'npm run build'
+                    bat 'npm run build'
                 }
             }
         }
