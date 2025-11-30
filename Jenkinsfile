@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NODEJS_HOME = tool name: 'nodejs', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
-        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
+        PATH = "${NODEJS_HOME};${env.PATH}"
     }
 
     stages {
@@ -15,11 +15,18 @@ pipeline {
             }
         }
 
+        stage('Verificar Node e NPM') {
+            steps {
+                bat 'node -v'
+                bat 'npm -v'
+            }
+        }
+
         stage('Backend - Install dependencies') {
             steps {
                 echo '📦 Instalando dependências do backend...'
                 dir('backend') {
-                    bat 'npm install'
+                    bat 'npm ci'
                 }
             }
         }
@@ -31,7 +38,6 @@ pipeline {
                     bat 'npx jest --json --outputFile=test-results.json'
                 }
             }
-
             post {
                 always {
                     echo '📄 Publicando resultados dos testes...'
@@ -44,7 +50,7 @@ pipeline {
             steps {
                 echo '📦 Instalando dependências do frontend...'
                 dir('frontend') {
-                    bat 'npm install'
+                    bat 'npm ci'
                 }
             }
         }
