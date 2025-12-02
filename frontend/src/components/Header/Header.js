@@ -1,6 +1,6 @@
 import "./Header.css"
 
-export default function Header({ showAuthButtons, showAdmButton, showNavButtons, showBooksButton, showLogoutButton, navigate }) {
+export default function Header({ showAuthButtons, showNavButtons, showBooksButton, showLogoutButton, navigate }) {
   
   const handleLogout = () => {
     // Remove token e dados do usuário
@@ -70,15 +70,6 @@ export default function Header({ showAuthButtons, showAdmButton, showNavButtons,
               ➕ Criar conta
             </button>
           </>
-        )}
-
-        {showAdmButton && (
-          <button onClick={() => navigate("/admin")} className="header-btn admin-btn">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Adm
-          </button>
         )}
       </div>
     </header>

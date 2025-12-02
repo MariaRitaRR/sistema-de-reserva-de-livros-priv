@@ -335,3 +335,31 @@
     background: #2859a0;
     transform: translateY(-2px);
     }
+    /* Adicione ao Reservations.css */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.card-status {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.status-active {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.status-cancelled {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.card-date {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.3rem;
+}

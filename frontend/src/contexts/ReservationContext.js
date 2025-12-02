@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
 const ReservationContext = createContext();
 
@@ -11,31 +11,101 @@ export const useReservations = () => {
 };
 
 export const ReservationProvider = ({ children }) => {
-  const [reservations, setReservations] = useState(() => {
-    // Carrega reservas do localStorage ao iniciar
-    const saved = localStorage.getItem('reservations');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Salva no localStorage sempre que mudar
-  useEffect(() => {
-    localStorage.setItem('reservations', JSON.stringify(reservations));
-  }, [reservations]);
-
-  const addReservation = (book) => {
-    // Verifica se o livro já foi reservado
-    const alreadyReserved = reservations.some(r => r.id === book.id);
-    if (alreadyReserved) {
-      alert('Este livro já foi reservado!');
-      return false;
-    }
-    
-    setReservations(prev => [...prev, book]);
-    return true;
+  // Função para obter o token do usuário logado
+  const getToken = () => {
+    return localStorage.getItem('token');
   };
 
-  const removeReservation = (bookId) => {
-    setReservations(prev => prev.filter(r => r.id !== bookId));
+  // fetchReservations com useCallback
+  const fetchReservations = useCallback(async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/reservations/my-reservations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReservations(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar reservas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Dependências vazias porque getToken e setReservations não mudam
+
+  // Carregar reservas do backend ao iniciar
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]); // Agora fetchReservations está na lista de dependências
+
+  const addReservation = async (book) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        alert('Faça login para reservar livros');
+        return false;
+      }
+
+      const response = await fetch('http://localhost:5000/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ bookId: book.id })
+      });
+
+      // IMPORTANTE: Ler a resposta SEMPRE
+      const data = await response.json();
+
+      // Verificar status DEPOIS de ler o JSON
+      if (response.ok) {
+        setReservations(prev => [...prev, data]);
+        alert('Reserva criada com sucesso!');
+        return true;
+      } else {
+        // Mostrar erro do backend
+        alert(data.error || 'Erro ao criar reserva');
+        return false;
+      }
+    } catch (error) {
+      console.error('Erro ao criar reserva:', error);
+      alert('Erro ao conectar com o servidor');
+      return false;
+    }
+  };
+
+  const removeReservation = async (reservationId) => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:5000/api/reservations/${reservationId}/cancel`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setReservations(prev => prev.filter(r => r.id !== reservationId));
+        alert('Reserva cancelada com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Erro ao cancelar reserva');
+      }
+    } catch (error) {
+      console.error('Erro ao cancelar reserva:', error);
+    }
   };
 
   const clearReservations = () => {
@@ -47,7 +117,9 @@ export const ReservationProvider = ({ children }) => {
       reservations, 
       addReservation, 
       removeReservation,
-      clearReservations 
+      clearReservations,
+      loading,
+      refreshReservations: fetchReservations
     }}>
       {children}
     </ReservationContext.Provider>
