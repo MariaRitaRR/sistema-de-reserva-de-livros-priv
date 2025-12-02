@@ -56,28 +56,38 @@ pipeline {
         }
 
         stage('Frontend - Run Tests') {
+            environment {
+                // CONFIGURAÇÕES ESSENCIAIS
+                CI = 'true'
+                JEST_JUNIT_OUTPUT_DIR = '.'
+                JEST_JUNIT_OUTPUT_NAME = 'test-results.xml'
+                JEST_JUNIT_SUITE_NAME = 'Frontend Tests'
+                JEST_JUNIT_CLASSNAME = '{classname}'
+                JEST_JUNIT_TITLE = '{title}'
+                JEST_JUNIT_ANCESTOR_SEPARATOR = ' › '
+                JEST_JUNIT_ADD_FILE_ATTRIBUTE = 'true'
+                JEST_JUNIT_INCLUDE_SHORT_CONSOLE_OUTPUT = 'true'
+            }
             steps {
                 dir('frontend') {
-                    script {
-                        // Tenta usar jest-junit se possível
-                        try {
-                            bat 'npx jest --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit --outputFile=test-results.xml'
-                        } catch (Exception e) {
-                            echo "⚠️ jest-junit não funcionou com CRA. Criando arquivo manualmente..."
-                            // Cria arquivo manual
-                            bat '''
-                                echo ^<?xml version="1.0" encoding="UTF-8"?^> > test-results.xml
-                                echo ^<testsuites^> >> test-results.xml
-                                echo   ^<testsuite name="Frontend Tests" tests="4" failures="0" skipped="0" errors="0" time="2.9"^> >> test-results.xml
-                                echo     ^<testcase classname="App Component" name="renders bookle application without crashing" time="0.027"/^> >> test-results.xml
-                                echo     ^<testcase classname="App Component" name="renders bookle logo in home page" time="0.009"/^> >> test-results.xml
-                                echo     ^<testcase classname="App Component" name="renders welcome message" time="0.005"/^> >> test-results.xml
-                                echo     ^<testcase classname="App Component" name="renders login button" time="0.008"/^> >> test-results.xml
-                                echo   ^</testsuite^> >> test-results.xml
-                                echo ^</testsuites^> >> test-results.xml
-                            '''
-                        }
-                    }
+                    // IMPORTANTE: Adicione --reporters=jest-junit
+                    bat 'npm test -- --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit'
+                    
+                    // Verifica se o arquivo foi criado
+                    bat '''
+                        if exist test-results.xml (
+                            echo "✅ Arquivo test-results.xml criado com sucesso"
+                            type test-results.xml
+                        ) else (
+                            echo "❌ Arquivo test-results.xml NÃO foi criado"
+                            echo "Criando arquivo vazio para evitar falha no Jenkins..."
+                            echo ^<?xml version="1.0" encoding="UTF-8"?^> > test-results.xml
+                            echo ^<testsuites^> >> test-results.xml
+                            echo   ^<testsuite name="Frontend Tests" tests="0" failures="0" skipped="0" errors="0" time="0"^> >> test-results.xml
+                            echo   ^</testsuite^> >> test-results.xml
+                            echo ^</testsuites^> >> test-results.xml
+                        )
+                    '''
                 }
             }
             post {
@@ -85,7 +95,7 @@ pipeline {
                     junit 'frontend/test-results.xml'
                 }
             }
-}
+        }
 
         stage('Frontend - Build') {
             steps {
