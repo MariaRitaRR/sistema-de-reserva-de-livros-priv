@@ -169,6 +169,17 @@ Popule o banco com dados iniciais (opcional):
 ```bash
 npm run seed
 ```
+Para que os livros apareçam automaticamente na biblioteca, execute o comando abaixo **no terminal local do computador**:
+
+```bash
+Invoke-RestMethod -Uri "http://localhost:5000/api/books/seed" -Method POST
+```
+>💡 Obs.: Caso você execute o seed mais de uma vez e acabe criando duplicatas, você pode limpar o banco de dados com:
+
+```bash
+Invoke-RestMethod -Uri "http://localhost:5000/api/books" -Method GET
+```
+E depois rode novamente o comando de seed.
 
 Inicie o servidor:
 

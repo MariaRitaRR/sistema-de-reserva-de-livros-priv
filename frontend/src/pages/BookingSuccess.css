@@ -1,0 +1,220 @@
+    /* Importando fontes do Google */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Roboto:wght@500;600&family=Anaheim&display=swap');
+
+    .booking-success-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom left, #8fd9a0, #7dd4d4, #4a9fc7);
+    }
+
+    /* Header */
+    .booking-success-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 15.28vh; 
+    background-color: #7dd4d4;
+    }
+
+    /* Logo Bookle */
+    .booking-success-logo {
+    position: absolute;
+    width: 12.97vw; 
+    height: 5.28vh; 
+    left: 6.09vw; 
+    top: 5.28vh; 
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px, 3.75vw, 48px); 
+    line-height: 1;
+    color: #3b1424;
+    display: flex;
+    align-items: center;
+    }
+
+    /* Botão Sair */
+    .booking-success-exit-btn {
+    position: absolute;
+    width: 9.38vw;
+    height: 6.67vh; 
+    left: 86.48vw; 
+    top: 5.28vh;
+    background-color: white;
+    border-radius: 24px;
+    border: none;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    font-size: clamp(12px, 1.25vw, 16px); 
+    color: #3b1424;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    }
+
+    .booking-success-exit-btn:hover {
+    background-color: #f8f8f8;
+    }
+
+    .booking-success-exit-btn .arrow-icon {
+    font-size: clamp(16px, 1.56vw, 20px); 
+    }
+
+    /* Título Principal */
+    .booking-success-title {
+    position: absolute;
+    width: 48.83vw; 
+    height: 17.5vh; 
+    left: 5.78vw; 
+    top: 26.67vh; 
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px, 3.75vw, 48px); 
+    line-height: 1.3;
+    color: #3b1424;
+    margin: 0;
+    }
+
+    /* Card Branco */
+    .booking-success-card {
+    position: absolute;
+    width: 44.84vw;
+    height: 30.97vh; 
+    left: 4.30vw; 
+    top: 47.64vh; 
+    background-color: #fffefe;
+    border-radius: 20px;
+    border: 2px solid #3b1424;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2.5vw;
+    box-sizing: border-box;
+    }
+
+    /* Texto de Agradecimento */
+    .booking-success-message {
+    width: 90%;
+    margin-bottom: 3.89vh; 
+    font-family: 'Anaheim', sans-serif;
+    font-weight: 400;
+    font-size: clamp(20px, 3.28vw, 42px); 
+    line-height: 1.1;
+    color: #511d33;
+    text-align: left;
+    padding-left: 2.5vw;
+    }
+
+    /* Botão Retornar */
+    .booking-success-return-btn {
+    width: 20.23vw; 
+    height: 5.69vh; 
+    margin-left: 2.5vw;
+    background-color: #326db1;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+    font-size: clamp(14px, 1.56vw, 20px);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    }
+
+    .booking-success-return-btn:hover {
+    background-color: #2857a0;
+    }
+
+    .booking-success-return-btn .arrow-icon {
+    font-size: clamp(18px, 1.88vw, 24px); 
+    }
+
+    /* Imagem Maior - Estante de Livros */
+    .booking-success-img-large {
+    position: absolute;
+    width: 42.47vw; 
+    height: 85.61vh; 
+    left: 61.05vw; 
+    top: 14.39vh; 
+    object-fit: contain;
+    }
+
+    /* Imagem Menor - Escada com Livros */
+    .booking-success-img-small {
+    position: absolute;
+    width: 23.09vw; 
+    height: 48.81vh; 
+    left: 48.94vw; 
+    top: 51.19vh; 
+    object-fit: contain;
+    }
+
+    /* Responsividade para telas menores */
+    @media screen and (max-width: 768px) {
+    .booking-success-container {
+        overflow-y: auto;
+    }
+
+    .booking-success-title {
+        font-size: clamp(20px, 5vw, 32px);
+        width: 90vw;
+        left: 5vw;
+    }
+
+    .booking-success-card {
+        width: 90vw;
+        left: 5vw;
+        height: auto;
+        min-height: 30vh;
+        top: 50vh;
+    }
+
+    .booking-success-message {
+        font-size: clamp(18px, 4vw, 28px);
+        padding-left: 1vw;
+    }
+
+    .booking-success-return-btn {
+        width: 60vw;
+        margin-left: 1vw;
+    }
+
+    .booking-success-img-large,
+    .booking-success-img-small {
+        display: none; /* Oculta imagens em telas pequenas para não sobrecarregar */
+    }
+    }
+
+    /* Responsividade para telas muito grandes */
+    @media screen and (min-width: 1920px) {
+    .booking-success-title {
+        font-size: 54px;
+    }
+
+    .booking-success-message {
+        font-size: 46px;
+    }
+
+    .booking-success-exit-btn {
+        font-size: 18px;
+    }
+
+    .booking-success-return-btn {
+        font-size: 22px;
+    }
+
+    .booking-success-logo {
+        font-size: 54px;
+    }
+    }

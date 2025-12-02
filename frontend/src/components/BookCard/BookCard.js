@@ -5,10 +5,13 @@ import { useReservations } from "../../contexts/ReservationContext";
 export default function BookCard({ book }) {
   const { addReservation } = useReservations();
 
-  const handleReserve = () => {
-    const success = addReservation(book);
+  const handleReserve = async () => { 
+    const success = await addReservation(book); 
+    
+  
     if (success) {
-      alert(`"${book.title}" foi adicionado às suas reservas!`);
+      console.log(`"${book.title}" reservado com sucesso`);
+
     }
   };
 

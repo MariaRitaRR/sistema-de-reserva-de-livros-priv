@@ -55,6 +55,22 @@ pipeline {
             }
         }
 
+        stage('Frontend - Run Tests') {
+            steps {
+                echo '🧪 Rodando testes do frontend...'
+                dir('frontend') {
+                    // Gera arquivos junit automaticamente (CRA + jest-junit)
+                    bat 'npm test -- --ci --reporters=default --reporters=jest-junit'
+                }
+            }
+            post {
+                always {
+                    echo '📄 Publicando resultados dos testes do frontend...'
+                    junit testResults: 'frontend/junit.xml', allowEmptyResults: true
+                }
+            }
+        }
+
         stage('Frontend - Build') {
             steps {
                 echo '🛠️ Construindo frontend...'

@@ -7,6 +7,22 @@ const Reservation = sequelize.define('Reservation', {
     primaryKey: true,
     autoIncrement: true
   },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users', // Nome da tabela User
+      key: 'id'
+    }
+  },
+  bookId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Books', // Nome da tabela Book
+      key: 'id'
+    }
+  },
   reservationDate: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

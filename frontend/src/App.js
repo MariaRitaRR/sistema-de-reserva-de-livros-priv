@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Books from "./pages/Books";
 import Reservations from "./pages/Reservations";
+import BookingSuccess from './pages/BookingSuccess';
 import "./App.css";
 
 function AppContent() {
@@ -18,6 +19,7 @@ function AppContent() {
       <Route path="/signup" element={<SignUp navigate={navigate} />} />
       <Route path="/books" element={<Books navigate={navigate} />} />
       <Route path="/reservations" element={<Reservations navigate={navigate} />} />
+      <Route path="/booking-success" element={<BookingSuccess />} /> 
     </Routes>
   );
 }
