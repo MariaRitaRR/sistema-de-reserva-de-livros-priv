@@ -70,3 +70,6 @@ database.sqlite
 
 # Backup files
 *.backup
+
+start.bat
+stop.bat

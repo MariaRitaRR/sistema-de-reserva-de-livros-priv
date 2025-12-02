@@ -56,18 +56,21 @@ pipeline {
         }
 
         stage('Frontend - Run Tests') {
-    steps {
-        dir('frontend') {
-            // Comando corrigido
-            bat 'npm test -- --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit --outputFile=test-results.xml'
+            steps {
+                dir('frontend') {
+                    // Gera o arquivo de resultados
+                    bat 'npm test -- --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit'
+                }
+            }
+            post {
+                always {
+                    // Procura o arquivo em vários locais possíveis
+                    junit '**/test-results.xml'
+                    junit 'frontend/test-results.xml'
+                    junit 'test-results.xml'
+                }
+            }
         }
-    }
-    post {
-        always {
-            junit 'frontend/test-results.xml'
-        }
-    }
-}
 
         stage('Frontend - Build') {
             steps {
