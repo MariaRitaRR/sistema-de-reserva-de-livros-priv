@@ -56,20 +56,18 @@ pipeline {
         }
 
         stage('Frontend - Run Tests') {
-            steps {
-                echo '🧪 Rodando testes do frontend...'
-                dir('frontend') {
-                    // Gera arquivos junit automaticamente (CRA + jest-junit)
-                    bat 'npm test -- --ci --reporters=default --reporters=jest-junit'
-                }
-            }
-            post {
-                always {
-                    echo '📄 Publicando resultados dos testes do frontend...'
-                    junit testResults: 'frontend/junit.xml', allowEmptyResults: true
-                }
-            }
+    steps {
+        dir('frontend') {
+            // Comando corrigido
+            bat 'npm test -- --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit --outputFile=test-results.xml'
         }
+    }
+    post {
+        always {
+            junit 'frontend/test-results.xml'
+        }
+    }
+}
 
         stage('Frontend - Build') {
             steps {
