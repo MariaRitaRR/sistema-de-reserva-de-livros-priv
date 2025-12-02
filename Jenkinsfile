@@ -54,48 +54,23 @@ pipeline {
                 }
             }
         }
-
         stage('Frontend - Run Tests') {
-            environment {
-                // CONFIGURAÇÕES ESSENCIAIS
-                CI = 'true'
-                JEST_JUNIT_OUTPUT_DIR = '.'
-                JEST_JUNIT_OUTPUT_NAME = 'test-results.xml'
-                JEST_JUNIT_SUITE_NAME = 'Frontend Tests'
-                JEST_JUNIT_CLASSNAME = '{classname}'
-                JEST_JUNIT_TITLE = '{title}'
-                JEST_JUNIT_ANCESTOR_SEPARATOR = ' › '
-                JEST_JUNIT_ADD_FILE_ATTRIBUTE = 'true'
-                JEST_JUNIT_INCLUDE_SHORT_CONSOLE_OUTPUT = 'true'
-            }
             steps {
+                echo '🧪 Rodando testes do frontend...'
                 dir('frontend') {
-                    // IMPORTANTE: Adicione --reporters=jest-junit
-                    bat 'npm test -- --ci --passWithNoTests --watchAll=false --reporters=default --reporters=jest-junit'
-                    
-                    // Verifica se o arquivo foi criado
-                    bat '''
-                        if exist test-results.xml (
-                            echo "✅ Arquivo test-results.xml criado com sucesso"
-                            type test-results.xml
-                        ) else (
-                            echo "❌ Arquivo test-results.xml NÃO foi criado"
-                            echo "Criando arquivo vazio para evitar falha no Jenkins..."
-                            echo ^<?xml version="1.0" encoding="UTF-8"?^> > test-results.xml
-                            echo ^<testsuites^> >> test-results.xml
-                            echo   ^<testsuite name="Frontend Tests" tests="0" failures="0" skipped="0" errors="0" time="0"^> >> test-results.xml
-                            echo   ^</testsuite^> >> test-results.xml
-                            echo ^</testsuites^> >> test-results.xml
-                        )
-                    '''
+                    // Com base no seu package.json, usa o script test:ci
+                    bat 'npm run test:ci'
                 }
             }
             post {
                 always {
-                    junit 'frontend/test-results.xml'
+                    echo '📄 Publicando resultados dos testes do frontend...'
+                    junit testResults: 'frontend/test-results.xml', allowEmptyResults: true
+            
                 }
             }
         }
+        
 
         stage('Frontend - Build') {
             steps {
